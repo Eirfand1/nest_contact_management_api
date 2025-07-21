@@ -1,4 +1,5 @@
-export class CreateAddressDto {
+export class ResponseAddressDto {
+    id: number;
     street?: string;
     city?: string;
     province?: string;

@@ -25,22 +25,13 @@ export class ContactService {
     const req: CreateContactDto = this.validationService.validate(ContactValidation.CREATE, createContactDto)
     
     const result = await this.contactRepository.save({
-      ...createContactDto,
+      ...req,
       ...{ username: user.username }
     });
     
     return this.contactResponse(result);
   }
   
-  async findAll(user: Users): Promise<ContactResponse[]> {
-    let data = await this.contactRepository.find({
-      where: {
-        username: user.username
-      }
-    });
-    
-    return data;
-  }
   
   async findOne(user: Users, id: number): Promise<ContactResponse> {
     this.logger.debug(`ContactService.create (${JSON.stringify(user)} ${JSON.stringify(id)})`);
@@ -102,50 +93,26 @@ export class ContactService {
       request
     );
     
-    const filter: FindOptionsWhere<Contacts>[] = [];
+    const queryBuilder = await this.contactRepository.createQueryBuilder('contact')
+    .where("username = :username", { username: user.username });
     
     if(searchRequest.name){
-      filter.push(
-        {
-          username: user.username,
-          first_name: Like(`%${searchRequest.name}%`)
-        },
-        {
-          username: user.username,
-          last_name: Like(`%${searchRequest.name} %`)
-        },
-      );
-    } else {
-      filter.push({ username: user.username})
-    }
+       queryBuilder.where("first_name LIKE :name OR last_name LIKE :name", { name : `%${searchRequest.name}%` })
+    } 1
     
     if(searchRequest.email){
-      // add email filter
-      filter.push({
-        username: user.username,
-        email: Like(`%${searchRequest.email}%`)
-      });
+       queryBuilder.where("email LIKE :email", { email:  `%${searchRequest.email}%` })
     }
-    
+
     if(searchRequest.phone){
-      // add phone filter
-      filter.push({
-        username: user.username,
-        phone: Like(`%${searchRequest.phone}%`)
-      });
+       queryBuilder.where("phone LIKE :phone", { phone:  `%${searchRequest.phone}%` });
     }
     
     const skip = (searchRequest.page - 1) * searchRequest.size
-    const contacts = await this.contactRepository.find({
-      where: filter,
-      take: searchRequest.size,
-      skip: skip
-    });
 
-    const total = await this.contactRepository.count({
-      where: filter
-    });
-
+    const contacts = await queryBuilder.skip(skip).take(searchRequest.size).getMany()
+    const total = await queryBuilder.skip(skip).take(searchRequest.size).getCount();
+    
     return {
       success: true,
       data: contacts.map(contact => this.contactResponse(contact)),

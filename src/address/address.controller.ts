@@ -1,34 +1,85 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Put, ParseIntPipe } from '@nestjs/common';
 import { AddressService } from './address.service';
 import { CreateAddressDto } from './dto/create-address.dto';
 import { UpdateAddressDto } from './dto/update-address.dto';
+import { Auth } from 'common/auth.decorators';
+import { Users } from 'user/entities/user.entity';
+import { WebResponse } from 'common/web-response.dto';
+import { ResponseAddressDto } from './dto/response-address.dto';
+import { ContactService } from 'contact/contact.service';
+import { number } from 'zod';
 
-@Controller('address')
+@Controller('api/contacts/:contactId/addresses')
 export class AddressController {
-  constructor(private readonly addressService: AddressService) {}
-
+  constructor(
+    private readonly addressService: AddressService,
+  ) {}
+  
   @Post()
-  create(@Body() createAddressDto: CreateAddressDto) {
-    return this.addressService.create(createAddressDto);
+  async create(
+    @Auth() user: Users,
+    @Param('contactId') contactId: number,
+    @Body() createAddressDto: CreateAddressDto
+  ): Promise<WebResponse<ResponseAddressDto>> {
+    
+    const result = await this.addressService.create(user, contactId, createAddressDto);
+    
+    return {
+      success: true,
+      data: result
+    }
   }
-
+  
   @Get()
-  findAll() {
-    return this.addressService.findAll();
+  async findAll(
+    @Auth() user: Users,
+    @Param('contactId') contactId
+  ) {
+    const result = await this.addressService.findAll(user, contactId);
+    return {
+      success: true,
+      data: result
+    }
   }
-
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.addressService.findOne(+id);
+  
+  @Get(':addressId')
+  async findOne(
+    @Auth() user: Users,
+    @Param('addressId') addressId: number,
+    @Param('contactId') contactId: number
+  ): Promise<WebResponse<ResponseAddressDto>> {
+    const result = await this.addressService.findOne(user, contactId, addressId)
+    return {
+      success: true,
+      data: result
+    }
   }
-
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAddressDto: UpdateAddressDto) {
-    return this.addressService.update(+id, updateAddressDto);
+  
+  @Put(':addressId')
+  async update(
+    @Auth() user: Users,
+    @Param('addressId', ParseIntPipe) addressId: number,
+    @Param('contactId', ParseIntPipe) contactId: number,
+    @Body() updateAddressDto: UpdateAddressDto
+  ): Promise<WebResponse<ResponseAddressDto>> {
+    
+    const result = await this.addressService.update(user, +contactId, +addressId, updateAddressDto);
+    return {
+      success: true,
+      data: result
+    }
   }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.addressService.remove(+id);
+  
+  @Delete(':addressId')
+  async remove(
+    @Auth() user: Users,
+    @Param('addressId') addressId: number,
+    @Param('contactId') contactId: number,
+  ): Promise<WebResponse<ResponseAddressDto>> {
+    const result = await this.addressService.remove(user, addressId, contactId);
+    return {
+      success: true,
+      data: result 
+    }
   }
 }
