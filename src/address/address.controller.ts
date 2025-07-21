@@ -6,8 +6,6 @@ import { Auth } from 'common/auth.decorators';
 import { Users } from 'user/entities/user.entity';
 import { WebResponse } from 'common/web-response.dto';
 import { ResponseAddressDto } from './dto/response-address.dto';
-import { ContactService } from 'contact/contact.service';
-import { number } from 'zod';
 
 @Controller('api/contacts/:contactId/addresses')
 export class AddressController {
@@ -18,7 +16,7 @@ export class AddressController {
   @Post()
   async create(
     @Auth() user: Users,
-    @Param('contactId') contactId: number,
+    @Param('contactId', ParseIntPipe) contactId: number,
     @Body() createAddressDto: CreateAddressDto
   ): Promise<WebResponse<ResponseAddressDto>> {
     
@@ -33,7 +31,7 @@ export class AddressController {
   @Get()
   async findAll(
     @Auth() user: Users,
-    @Param('contactId') contactId
+    @Param('contactId', ParseIntPipe) contactId
   ) {
     const result = await this.addressService.findAll(user, contactId);
     return {
@@ -45,8 +43,8 @@ export class AddressController {
   @Get(':addressId')
   async findOne(
     @Auth() user: Users,
-    @Param('addressId') addressId: number,
-    @Param('contactId') contactId: number
+    @Param('addressId', ParseIntPipe) addressId: number,
+    @Param('contactId', ParseIntPipe) contactId: number
   ): Promise<WebResponse<ResponseAddressDto>> {
     const result = await this.addressService.findOne(user, contactId, addressId)
     return {
@@ -73,8 +71,8 @@ export class AddressController {
   @Delete(':addressId')
   async remove(
     @Auth() user: Users,
-    @Param('addressId') addressId: number,
-    @Param('contactId') contactId: number,
+    @Param('addressId', ParseIntPipe) addressId: number,
+    @Param('contactId', ParseIntPipe) contactId: number,
   ): Promise<WebResponse<ResponseAddressDto>> {
     const result = await this.addressService.remove(user, addressId, contactId);
     return {
